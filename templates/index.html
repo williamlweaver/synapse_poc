@@ -83,7 +83,7 @@
             });
             
             // This handler receives real-time data from the Python backend
-            socket.on('update_data', (data) => {
+            socket.on('update_sensor', (data) => {
                 potValueElem.textContent = data.pot_value;
                 servoAngleElem.textContent = data.servo_angle;
             });
