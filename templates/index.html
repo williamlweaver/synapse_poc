@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYNAPSE POC Controller</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Socket.IO client library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-900 text-white flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-md bg-slate-800 rounded-2xl shadow-2xl p-8 space-y-6 border border-slate-700">
+        <!-- Header -->
+        <div class="text-center">
+            <h1 class="text-3xl font-bold text-cyan-400">SYNAPSE POC</h1>
+            <p class="text-slate-400 mt-2">Potentiometer-Servo Controller</p>
+        </div>
+
+        <!-- Connection Status -->
+        <div id="status-badge" class="flex items-center justify-center space-x-2 p-2 rounded-lg bg-red-900/50 text-red-300 transition-all duration-300">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m-12.728 0a9 9 0 010-12.728m12.728 0L5.636 18.364"></path></svg>
+            <span id="status-text" class="font-medium text-sm">Disconnected</span>
+        </div>
+
+        <!-- Real-time Data Display -->
+        <div class="grid grid-cols-2 gap-4 text-center">
+            <div class="bg-slate-700/50 p-4 rounded-lg">
+                <p class="text-sm font-medium text-slate-400">Potentiometer</p>
+                <p id="pot-value" class="text-3xl font-bold text-amber-400">0</p>
+                <p class="text-xs text-slate-500">(0-1023)</p>
+            </div>
+            <div class="bg-slate-700/50 p-4 rounded-lg">
+                <p class="text-sm font-medium text-slate-400">Servo Angle</p>
+                <p id="servo-angle" class="text-3xl font-bold text-green-400">0</p>
+                <p class="text-xs text-slate-500">(0-180°)</p>
+            </div>
+        </div>
+
+        <!-- LED Controller -->
+        <div class="space-y-3">
+            <label for="led-slider" class="block text-sm font-medium text-slate-300">LED Brightness</label>
+            <input id="led-slider" type="range" min="0" max="255" value="0" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+            <div class="text-center text-slate-400 text-sm">
+                Value: <span id="slider-value">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Establish WebSocket connection with the Python backend
+            const socket = io.connect('http://' + document.domain + ':' + location.port);
+
+            // --- DOM Element References ---
+            const potValueElem = document.getElementById('pot-value');
+            const servoAngleElem = document.getElementById('servo-angle');
+            const ledSlider = document.getElementById('led-slider');
+            const sliderValueElem = document.getElementById('slider-value');
+            const statusBadge = document.getElementById('status-badge');
+            const statusText = document.getElementById('status-text');
+
+            // --- WebSocket Event Handlers ---
+            socket.on('connect', () => {
+                console.log('Connected to server!');
+                statusText.textContent = 'Connected';
+                statusBadge.classList.remove('bg-red-900/50', 'text-red-300');
+                statusBadge.classList.add('bg-green-900/50', 'text-green-300');
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Disconnected from server.');
+                statusText.textContent = 'Disconnected';
+                statusBadge.classList.add('bg-red-900/50', 'text-red-300');
+                statusBadge.classList.remove('bg-green-900/50', 'text-green-300');
+            });
+            
+            // This handler receives real-time data from the Python backend
+            socket.on('update_data', (data) => {
+                potValueElem.textContent = data.pot_value;
+                servoAngleElem.textContent = data.servo_angle;
+            });
+
+            // --- UI Event Listeners ---
+            ledSlider.addEventListener('input', () => {
+                const brightness = ledSlider.value;
+                sliderValueElem.textContent = brightness;
+                // Send the new brightness value to the Python backend
+                socket.emit('led_control', { brightness: brightness });
+            });
+        });
+    </script>
+
+</body>
+</html>
