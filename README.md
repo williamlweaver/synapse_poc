@@ -11,10 +11,15 @@ Scientific researchers often rely on expensive, closed-source software that lack
 Technology Stack
 
 Backend: Python 3
+
 Web Framework: Flask
+
 Real-Time Communication: Flask-SocketIO with Eventlet
+
 Hardware Communication: PySerial
+
 Frontend: HTML5, CSS3, JavaScript (with Socket.IO client)
+
 Hardware: Arduino Uno R3
 
 Quick Start Guide
